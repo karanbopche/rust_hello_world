@@ -66,14 +66,14 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           cd target/release
-          tar -czf ../../$${{env.PROJECT_NAME}}-${{github.ref_name}}-{{matrix.asset-suffix}} ${{env.PROJECT_NAME}}
+          tar -czf ../../$${{env.PROJECT_NAME}}-${{github.ref_name}}-${{matrix.asset-suffix}} ${{env.PROJECT_NAME}}
           cd ../..
 
       - name: Package windows binary asset
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          Compress-Archive -Path target\release\${{env.PROJECT_NAME}}.exe -Destination ${{env.PROJECT_NAME}}-${{github.ref_name}}-${{matrix.assert-suffix}}
+          Compress-Archive -Path target\release\${{env.PROJECT_NAME}}.exe -Destination ${{env.PROJECT_NAME}}-${{github.ref_name}}-${{matrix.asset-suffix}}
 
       - name: Create Github Release
         env:
@@ -84,4 +84,4 @@ jobs:
             --title "Release ${{ github.ref_name }}" \
             --generate-notes 2>/dev/null || true
 
-          gh release upload ${{ github.ref_name }} ${{env.PROJECT_NAME}}-${{github.ref_name}}-${{matrix.assert-suffix}} --clobber
+          gh release upload ${{ github.ref_name }} ${{env.PROJECT_NAME}}-${{github.ref_name}}-${{matrix.asset-suffix}} --clobber
