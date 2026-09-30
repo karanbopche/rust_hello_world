@@ -43,7 +43,9 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
+            asset-suffix: linux.tar.gz
           - os: windows-latest
+            asset-suffix: windows.zip
 
     runs-on: ${{matrix.os}}
 
@@ -71,14 +73,13 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          Compress-Archive -Path target\release\${{env.PROJECT_NAME}}.exe -Destination ${{env.PROJECT_NAME}}-${{github.ref_name}}-linux.tar.gz
+          Compress-Archive -Path target\release\${{env.PROJECT_NAME}}.exe -Destination ${{env.PROJECT_NAME}}-${{github.ref_name}}-${{matrix.assert-suffix}}
 
       - name: Create Github Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create ${{github.ref_name}} \
-            --title "Release ${{github.ref_name}}" \
-            --generate-notes ${{env.PROJECT_NAME}}-${{github.ref_name}}-windows.zip \
-            --clobber
+        uses: softprops/actions-gh-release@v2
+        with:
+          tag_name: ${{github.ref_name}}
+          generate_release_notes: true
+          files: ${{env.PROJECT_NAME}}-${{github.ref_name}}-${{matrix.assert-suffix}}
+
 
