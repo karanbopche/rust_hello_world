@@ -9,6 +9,7 @@ on:
     branches: ["main"]
 env:
   CARGO_TERM_COLOR: always
+  PROJECT_NAME: rust_hello_world
 
 jobs:
   build:
@@ -37,11 +38,20 @@ jobs:
     name: Github Release
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset-name: ${{env.PROJECT_NAME}}-${{github.ref_name}}-linux.tar.gz
+          - os: windows-latest
+            asset-name: ${{env.PROJECT_NAME}}-${{github.ref_name}}-windows.zip
+
+    runs-on: ${{matrix.os}}
 
     permissions:
       contents: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -52,11 +62,18 @@ jobs:
       - name: Compile release binary
         run: cargo build --release
 
-      - name: Package binary Asset
+      - name: Package linux binary asset
+        if: matrix.os == 'ubuntu-latest'
         run: |
           cd target/release
-          tar -czf ../../rust_hello_world-${{github.ref_name}}-linux-tar.gz rust_hello_world
+          tar -czf ../../${{matrix.asset-name}} ${{env.PROJECT_NAME}}
           cd ../..
+
+      - name: Package windows binary asset
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path target\release\${{env.PROJECT_NAME}}.exe -Destination ${{matrix.asset-name}}
 
       - name: Create Github Release
         env:
@@ -64,5 +81,6 @@ jobs:
         run: |
           gh release create ${{github.ref_name}} \
             --title "Release ${{github.ref_name}}" \
-            --generate-notes \
-            rust_hello_world-{{github.ref_name}}-linux-tar.gz
+            --generate-notes ${{matrix.asset-name}} \
+            --clobber
+
